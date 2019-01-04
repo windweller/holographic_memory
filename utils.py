@@ -53,7 +53,7 @@ def find_latest_file(path, regex):
     for f in files_in_dir:
         r = re.match(regex, f)
         current_index = int(r.group(1)) if r else 0
-        print current_index, latest[1], current_index > latest[1]
+        print(current_index, latest[1], current_index > latest[1])
         latest = (f, current_index) if current_index > latest[1] else latest
 
     return latest
@@ -86,7 +86,7 @@ def copy_to_graph(org_instance, to_graph, copied_variables={}, namespace=""):
     else:
         new_name = org_instance.name
 
-    print 'new name = ', new_name
+    print('new name = ', new_name)
 
     #If a variable by the new name already exists, return the
     #correspondng tensor that will act as an input

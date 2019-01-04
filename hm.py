@@ -1,7 +1,6 @@
 import math
 import tensorflow as tf
 import numpy as np
-from utils import tf_mean_std_normalize
 from tensorflow.python.framework.tensor_shape import TensorShape
 
 class HolographicMemory:
@@ -40,7 +39,7 @@ class HolographicMemory:
         num_models = len(perms)
         input_size = perms[0].shape[0]
         perms_expanded = np.array([np.tile(p, batch_size) for p in perms]).flatten()
-        print 'perms_expanded = ', perms_expanded, '| len = ', len(perms_expanded)
+        print('perms_expanded = ', perms_expanded, '| len = ', len(perms_expanded))
         x_inds = np.array(([[i]*input_size for i in range(batch_size)]*num_models)).flatten()
         return [[x, y] for x,y in zip(x_inds, perms_expanded)]
 
@@ -73,9 +72,9 @@ class HolographicMemory:
             assert l2 < 1e-9, "key [%s] is not normalized, l2 = %f \n%s" \
                 % (k, l2, str(self.sess.run(k)))
             if print_l2:
-                print 'l2 = ', l2
+                print('l2 = ', l2)
 
-        print '|keys| ~= 1.0: verified'
+        print('|keys| ~= 1.0: verified')
 
     '''
     Normalizes real valued keys to have complex abs of 1.0
@@ -118,16 +117,16 @@ class HolographicMemory:
         kshp = keys.get_shape().as_list()
         kshp[0] = num_keys if num_keys is not None else kshp[0]
         kshp[1] = xshp[1] if kshp[1] is None else kshp[1]
-        print 'X : ', xshp, ' | keys : ', kshp, ' | batch_size = ', batch_size
+        print('X : ', xshp, ' | keys : ', kshp, ' | batch_size = ', batch_size)
 
         # Concatenate X & keys
         num_dupes = kshp[0] / batch_size
-        print 'num dupes = ', num_dupes
+        print('num dupes = ', num_dupes)
         xconcat = tf.tile(X, [num_dupes, 1]) \
                   if num_dupes > 1 else X
         xspshp = xconcat.get_shape().as_list()
         xspshp[0] = num_keys if xspshp[0] is None else xspshp[0]
-        print 'xconcatinated : ', xspshp
+        print('xconcatinated : ', xspshp)
 
         # The following computes all of the values individually, i.e
         # [P0k0 * x0, P0k1 * x1 + ...]
@@ -139,7 +138,7 @@ class HolographicMemory:
                                                        stride=1,
                                                        padding='SAME')), 0) for i in range(kshp[0])]
         conv = tf.concat(0, conv)
-        print 'conv = ', conv.get_shape().as_list()
+        print('conv = ', conv.get_shape().as_list())
 
         # We now aggregate them as follows:
         # c0 = P0k0 * x0 + P0k1 * x1 + ... P0k_batch * x_batch
@@ -149,7 +148,7 @@ class HolographicMemory:
         conv_concat = [tf.expand_dims(tf.reduce_mean(conv[begin:end], 0), 0)
                        for begin, end in zip(range(0, kshp[0], batch_iter),
                                              range(batch_iter, kshp[0]+1, batch_iter))]
-        print 'conv concat = ', len(conv_concat), ' x ', conv_concat[0].get_shape().as_list()
+        print('conv concat = ', len(conv_concat), ' x ', conv_concat[0].get_shape().as_list())
 
         # return a single concatenated  tensor:
         # C = [c0; c1; ...]
@@ -177,7 +176,7 @@ class HolographicMemory:
         kshp = keys.get_shape().as_list()
         kshp[0] = num_keys if num_keys is not None else kshp[0]
         kshp[1] = xshp[1] if kshp[1] is None else kshp[1]
-        print 'X : ', xshp, ' | keys : ', kshp, ' | batch_size = ', batch_size
+        print('X : ', xshp, ' | keys : ', kshp, ' | batch_size = ', batch_size)
 
         # duplicate out input data by the ratio: number_keys / batch_size
         # eg: |input| = [2, 784] ; |keys| = 3*[2, 784] ; (3 is the num_copies)
@@ -186,7 +185,7 @@ class HolographicMemory:
         # At test: |memories| = [3, 784] ; |keys| = 3*[n, 784] ;
         #          |new_input| = 3n / 3 = n   [where n is the number of desired parallel retrievals]
         num_dupes = kshp[0] / batch_size
-        print 'num dupes = ', num_dupes
+        print('num dupes = ', num_dupes)
         xcplx = HolographicMemory.split_to_complex(tf.tile(X, [num_dupes, 1]) \
                                                    if num_dupes > 1 else X)
         xshp = xcplx.get_shape().as_list()
@@ -198,16 +197,16 @@ class HolographicMemory:
         #fft_mul = HolographicMemory.bound(tf.mul(tf.fft(xcplx), tf.fft(kcplx)))
         fft_mul = tf.mul(tf.fft(xcplx), tf.fft(kcplx))
         conv = unsplit_func(tf.ifft(fft_mul))
-        print 'full conv = ', conv.get_shape().as_list()
+        print('full conv = ', conv.get_shape().as_list())
 
 
         batch_iter = min(batch_size, xshp[0]) if xshp[0] is not None else batch_size
-        print 'batch = ', batch_size, ' | num_copies = ', num_copies, '| num_keys = ', num_keys, \
-            '| xshp[0] = ', xshp[0], ' | len(keys) = ', kshp[0], ' | batch iter = ', batch_iter
+        print('batch = ', batch_size, ' | num_copies = ', num_copies, '| num_keys = ', num_keys,
+            '| xshp[0] = ', xshp[0], ' | len(keys) = ', kshp[0], ' | batch iter = ', batch_iter)
         conv_concat = [tf.expand_dims(tf.reduce_mean(conv[begin:end], 0), 0)
                        for begin, end in zip(range(0, kshp[0], batch_iter),
                                              range(batch_iter, kshp[0]+1, batch_iter))]
-        print 'conv concat = ', len(conv_concat), ' x ', conv_concat[0].get_shape().as_list()
+        print('conv concat = ', len(conv_concat), ' x ', conv_concat[0].get_shape().as_list())
 
         # return a single concatenated  tensor:
         # C = [c0; c1; ...]
@@ -260,12 +259,12 @@ class HolographicMemory:
     def _normalize(self, keys):
         # Normalize our keys to mod 1 if specified
         if self.complex_normalize:
-            print 'normalizing via complex abs..'
+            print('normalizing via complex abs..')
             keys = HolographicMemory.normalize_real_by_complex_abs(keys)
 
         # Normalize our keys using the l2 norm
         if self.l2_normalize:
-            print 'normalizing via l2..'
+            print('normalizing via l2..')
             keys = tf.nn.l2_normalize(keys, 1)
 
         return keys
@@ -284,7 +283,7 @@ class HolographicMemory:
         keys = self._normalize(keys)
         batch_size = v.get_shape().as_list()[0] if batch_size is None else batch_size
         permed_keys = self.perm_keys(keys, self.perms, num_keys=batch_size)
-        print 'enc_perms = ', permed_keys.get_shape().as_list(), ' | batch_size = ', batch_size
+        print('enc_perms = ', permed_keys.get_shape().as_list(), ' | batch_size = ', batch_size)
         return self.conv_func(v, permed_keys,
                               batch_size,
                               self.num_models,
@@ -304,7 +303,7 @@ class HolographicMemory:
         num_memories = memories.get_shape().as_list()
         num_memories[0] = self.num_models if num_memories[0] is None else num_memories[0]
         num_keys = keys.get_shape().as_list()[0] if num_keys is None else num_keys
-        print 'decode: numkeys = ', num_keys, ' | num_memories = ', num_memories
+        print('decode: numkeys = ', num_keys, ' | num_memories = ', num_memories)
 
         # re-gather keys to avoid mixing between different keys.
         perms = self.perm_keys(keys, self.perms, num_keys=num_keys)
@@ -313,8 +312,7 @@ class HolographicMemory:
         pshp[1] = num_memories[1] if pshp[1] is None else pshp[1]
         permed_keys = tf.concat(0, [tf.strided_slice(perms, [i, 0], pshp, [num_keys, 1])
                                     for i in range(num_keys)])
-        print 'memories = ', num_memories, \
-            '| dec_perms =', permed_keys.get_shape().as_list()
+        print('memories = ', num_memories, '| dec_perms =', permed_keys.get_shape().as_list())
         return self.conv_func(memories, permed_keys,
                               num_memories[0],
                               self.num_models,
